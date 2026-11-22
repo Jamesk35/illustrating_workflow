@@ -28,6 +28,7 @@ dna_te_z <- c("DNA/PIF-Harbinger", "DNA/TcMar-Tc1", "DNA/MULE-MuDR",
               "DNA/TcMar-Tc4", "DNA/TcMar-Pogo", "DNA/CMC-Chapaev", 
               "DNA/TcMar-Mariner", "DNA/PiggyBac","RC/Helitron")
 
+#cs - maybe make the variable name more distinct? pretty similar to trich_zb
 trich_z <- trich_zb |> 
   filter(matching_class %notin% non_te_z) |>
   filter(matching_class %in% dna_te_z) 
@@ -56,6 +57,8 @@ trich_s$matching_class |> unique()
 
 trich_z$matching_class |> unique()
 
+#cs - code for picking the unique TEs rather than picking through them?
+
 dte_common <- c("DNA/PIF-Harbinger", "DNA/TcMar-Tc1", "DNA/MULE-MuDR", 
                "DNA/TcMar-Tc4", "DNA/TcMar-Pogo", "DNA/CMC-Chapaev", 
             "DNA/TcMar-Mariner", "RC/Helitron")
@@ -76,6 +79,8 @@ tz_common <- trich_z |>
 
 
 ## filtering the 5 largest DNA transposons in the two species -----
+
+#cs - filters 5 largest query_widths in each matching class
 
 ts_5 <- ts_common|> 
   top_n(5, qry_width)
