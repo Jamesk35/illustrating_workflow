@@ -14,6 +14,8 @@ library(tidyverse)
 
 ## import data -----
 
+setwd("../R/")
+
 df_trich_s <- read_csv("../data/trichinella_spiralis_te.csv")
 genus_types <- read_csv("../data/2026-10-19_trich_genotypes.csv")
 trich_zb <- read_csv("../data/trich_z.csv")
@@ -27,6 +29,8 @@ non_te_z <- c("Simple_repeat", "Low_complexity", "Satellite", "snRNA", "rRNA", "
 dna_te_z <- c("DNA/PIF-Harbinger", "DNA/TcMar-Tc1", "DNA/MULE-MuDR", 
               "DNA/TcMar-Tc4", "DNA/TcMar-Pogo", "DNA/CMC-Chapaev", 
               "DNA/TcMar-Mariner", "DNA/PiggyBac","RC/Helitron")
+
+#cs - I would recommend making the variable name more distinct, pretty similar to trich_zb
 
 trich_z <- trich_zb |> 
   filter(matching_class %notin% non_te_z) |>
@@ -49,30 +53,32 @@ trich_s <- df_trich_s |>
 
 trich_s$species = c("Trichinella spiralis")
 
-  
+
 ## identifying and filtering the common DNA transposons between the two species -----
 
 trich_s$matching_class |> unique()
 
 trich_z$matching_class |> unique()
 
-dte_common <- c("DNA/PIF-Harbinger", "DNA/TcMar-Tc1", "DNA/MULE-MuDR", 
-               "DNA/TcMar-Tc4", "DNA/TcMar-Pogo", "DNA/CMC-Chapaev", 
-            "DNA/TcMar-Mariner", "RC/Helitron")
+#cs - made code for picking the unique TEs rather than picking through them
+
+dte_common <- intersect(unique(trich_s$matching_class),
+                        unique(trich_z$matching_class))
+
+#cs - combined the two distinct lines to one
+#cs - included matching_class and species to avoid removing different TE classes or species
 
 ts_common <- trich_s |> 
   group_by(matching_class) |> 
   select(matching_class, qry_width, perc_insert, species) |> 
   filter(matching_class %in% dte_common) |> 
-  distinct(perc_insert, .keep_all = TRUE) |> 
-  distinct(qry_width, .keep_all = TRUE)
+  distinct(matching_class, qry_width, perc_insert, species, .keep_all = TRUE)
 
 tz_common <- trich_z |> 
   group_by(matching_class) |> 
   select(matching_class, qry_width, perc_insert, species) |> 
   filter(matching_class %in% dte_common) |> 
-  distinct(perc_insert, .keep_all = TRUE) |> 
-  distinct(qry_width, .keep_all = TRUE)
+  distinct(matching_class, qry_width, perc_insert, species, .keep_all = TRUE)
 
 
 ## filtering the 5 largest DNA transposons in the two species -----
@@ -137,8 +143,8 @@ combined_top5 <- ggplot(
   combined_5,
   aes(x =qry_width, y =perc_insert, 
       colour = matching_class, shape = combined_5$species)) +
-    geom_point(size = 3) + 
-    geom_line(size = 0.5) +
+  geom_point(size = 3) + 
+  geom_line(size = 0.5) +
   xlim(0,750) +
   ylim(0,15) +
   labs(title = "The Effects of Sequence Length on Percent Insertion in T. spiralis & T.zimbabwensis for Each DNA Transposon Type.",
@@ -156,24 +162,27 @@ ggsave("combined_top5.png", path = "../output")
 
 ## creating combined plot for largest transposon length per DNA transposon-----
 
-combined_largest <- ggplot() +
-  geom_point(data = combined_largest, 
-             aes(x =qry_width, y =perc_insert, 
-                 colour = matching_class, shape = combined_largest$species,
-                 size = 5)) +
-  guides(size = "none") +
-  labs(title = "The Effects of Sequence Length on Percent Insertion in T. spiralis & T.zimbabwensis for Each DNA Transposon Type.",
-       subtitle = "Using the Largest DNA Transposon Sequences in Base Pairs.",
-       x = "Sequence Length (bp)",
-       y = "Percent Insertion",
-       colour = "DNA Transposon Type",
-       shape = "Species")
+#cs - already used combined_largest variable name for earlier command with rbind
+#cs - changed the name to p_combined_largest to avoid overwriting the combined_largest dataframe
+#cs - separated the two species into individual panels to make comparisons easier.
 
-print(combined_largest)
+p_combined_largest <- ggplot(
+  combined_largest,
+  aes(x = qry_width, y = perc_insert,
+      colour = matching_class)
+) +
+  geom_point(size = 3) +
+  facet_wrap(~species) +
+  labs(
+    title = "Effects of Sequence Length and Percent Insertion in Shared DNA Transposons",
+    subtitle = "Largest TE sequence within each matching class",
+    x = "Sequence Length (bp)",
+    y = "Percent Insertion",
+    colour = "DNA Transposon Type"
+  )
 
-ggsave("combined_largest.png", path = "../output")
+print(p_combined_largest)
 
-
-
+ggsave("p_combined_largest.png", path = "../output")
 
 
